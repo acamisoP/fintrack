@@ -57,7 +57,9 @@ const BRAND_DOMAINS = [
   [/ENEOS|エネオス/i, 'eneos.co.jp'], [/出光|apollo/i, 'idemitsu.com'],
   [/コスモ石油/, 'cosmo-oil.co.jp'],
   [/楽天市場|楽天ブックス|ラクテン/i, 'rakuten.co.jp'], [/Amazon|アマゾン|AMZN/i, 'amazon.co.jp'],
-  [/メルカリ/i, 'mercari.com'], [/ヤフ|Yahoo/i, 'yahoo.co.jp'],
+  [/メルカリ|MERCARI/i, 'mercari.com'], [/ヤフ|Yahoo/i, 'yahoo.co.jp'],
+  [/NEXCO/i, 'e-nexco.co.jp'], [/コカ・?コーラ|Coke\s*ON/i, 'cocacola.co.jp'],
+  [/アサヒ飲料/, 'asahiinryo.co.jp'], [/ユニバーサル・?スタジオ|USJ/i, 'usj.co.jp'],
   [/Steam/i, 'steampowered.com'], [/Google|グーグル/i, 'google.com'],
   [/Apple|アップル|iTunes/i, 'apple.com'], [/Netflix/i, 'netflix.com'],
   [/Spotify/i, 'spotify.com'], [/ニコニコ|niconico/i, 'nicovideo.jp'],
@@ -71,7 +73,9 @@ const PAY_DOMAINS = {
 };
 const AV_COLORS = ['#0381fe', '#8e7bff', '#23c562', '#ffb74d', '#f06292', '#4dd0e1', '#ff8a65', '#90a4ae'];
 function brandDomain(name) {
-  for (let i = 0; i < BRAND_DOMAINS.length; i++) if (BRAND_DOMAINS[i][0].test(name)) return BRAND_DOMAINS[i][1];
+  let t = String(name || '');
+  try { t = t.normalize('NFKC'); } catch (e) { } // 全角英数(ＭＥＲＣＡＲＩ等)を半角へ寄せてから照合
+  for (let i = 0; i < BRAND_DOMAINS.length; i++) if (BRAND_DOMAINS[i][0].test(t)) return BRAND_DOMAINS[i][1];
   return null;
 }
 const initialOf = s => {
