@@ -603,19 +603,25 @@ function buildLegend(wrap, segs, total) {
   ).join('') || '<div class="empty" style="padding:20px 0">' + SVG_EMPTY + '<div>この月の支出はありません</div></div>';
   growLater('.lg-row .bar i', wrap);
 }
+function manLabel(e) {
+  if (e < 10000) return '¥' + e.toLocaleString('ja-JP');
+  const man = Math.round(e / 1000) / 10;
+  return '¥' + (man % 1 ? man.toFixed(1) : String(man)) + '万';
+}
 function buildTrend(wrap) {
   const months = [];
   let m = state.m;
   for (let i = 0; i < 12; i++) { months.unshift(m); m = prevM(m); }
   const ovs = months.map(x => ovMonth(x));
   const max = Math.max.apply(null, ovs.map(o => o ? o.e : 0).concat([1]));
+  // 高さは%でなくpx直指定。親.tbarは高さ未定義のflexカラムなので%は0pxに解決される
   wrap.innerHTML = months.map((x, i) => {
     const e = ovs[i] ? ovs[i].e : 0;
-    const h = Math.max(Math.round(e / max * 100), e > 0 ? 4 : 2);
+    const h = Math.max(Math.round(e / max * 96), e > 0 ? 4 : 2);
     const cur = x === state.m;
     return '<div class="tbar' + (cur ? ' cur' : '') + '" data-m="' + x + '">' +
-      '<div class="v">' + (cur && e ? '¥' + Math.round(e / 1000) + 'k' : '') + '</div>' +
-      '<div class="col" style="height:' + h + '%;transition-delay:' + i * 40 + 'ms"></div>' +
+      '<div class="v">' + (cur && e ? manLabel(e) : '') + '</div>' +
+      '<div class="col" style="height:' + h + 'px;transition-delay:' + i * 40 + 'ms"></div>' +
       '<div class="m">' + (+x.slice(5, 7)) + '月</div></div>';
   }).join('');
   growLater('.tbar .col', wrap);
