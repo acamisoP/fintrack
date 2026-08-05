@@ -1,7 +1,7 @@
 // FinTrack — アプリシェルのstale-while-revalidateキャッシュ(オフラインでもシェル起動可)。
 // GAS(クロスオリジン)へのデータ要求とfaviconサービスは一切触らない。
-const CACHE = 'fintrack-v1';
-const ASSETS = ['./', 'index.html', 'app.js?v=1', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png'];
+const CACHE = 'fintrack-v2';
+const ASSETS = ['./', 'index.html', 'app.js?v=2', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

@@ -65,12 +65,37 @@ const BRAND_DOMAINS = [
   [/Spotify/i, 'spotify.com'], [/ニコニコ|niconico/i, 'nicovideo.jp'],
   [/DMM/i, 'dmm.com'], [/DAZN/i, 'dazn.com'], [/pixiv|ピクシブ/i, 'pixiv.net'],
   [/ウエルシア|HAC|ハックドラッグ/, 'welcia-yakkyoku.co.jp'],
+  [/ビッグヨーサン|BIGYOSUN/i, 'bigyosun.com'], [/あきばお|akibaoo/i, 'akibaoo.co.jp'],
 ];
 const PAY_DOMAINS = {
   '楽天ペイ': 'pay.rakuten.co.jp', 'PayPay': 'paypay.ne.jp', 'd払い': 'docomo.ne.jp',
   'dポイント': 'dpoint.docomo.ne.jp', 'Sonyデビット': 'moneykit.net',
   '楽天カード': 'rakuten-card.co.jp', '楽天ポイント': 'point.rakuten.co.jp', 'PayPal': 'paypal.com',
 };
+// リポジトリ同梱の公式ロゴ(logos/。Wikimedia Commonsおよび各公式サイトから取得)。faviconより優先
+const LOGO_FILES = [
+  [/ファミリーマート|ファミマ/, 'famima.svg'],
+  [/コカ・?コーラ|Coke\s*ON/i, 'cocacola.svg'],
+  [/ヨドバシ/, 'yodobashi.svg'],
+  [/ローソン/, 'lawson.svg'],
+  [/セブン|7-?イレブン/i, 'seveneleven.svg'],
+  [/ビッグヨーサン|BIGYOSUN/i, 'big-yosun.png'],
+  [/あきばお|akibaoo/i, 'akibaoo.png'],
+  [/すき家/, 'sukiya.png'],
+  [/デイリーヤマザキ/, 'daiyama.png'],
+  [/楽天|ラクテン|RAKUTEN/i, 'rakuten.svg'],
+  [/Amazon|アマゾン|AMZN/i, 'amazon.svg'],
+  [/メルカリ|MERCARI/i, 'mercari.svg'],
+  [/Suica/i, 'suica.svg'],
+  [/PayPay/i, 'paypay.svg'],
+];
+const PAY_FILES = { '楽天ペイ': 'rakuten.svg', '楽天カード': 'rakuten.svg', '楽天ポイント': 'rakuten.svg', 'PayPay': 'paypay.svg' };
+function brandLogoFile(name) {
+  let t = String(name || '');
+  try { t = t.normalize('NFKC'); } catch (e) { }
+  for (let i = 0; i < LOGO_FILES.length; i++) if (LOGO_FILES[i][0].test(t)) return LOGO_FILES[i][1];
+  return null;
+}
 const AV_COLORS = ['#0381fe', '#8e7bff', '#23c562', '#ffb74d', '#f06292', '#4dd0e1', '#ff8a65', '#90a4ae'];
 function brandDomain(name) {
   let t = String(name || '');
@@ -87,24 +112,33 @@ const hashColor = s => {
   for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
   return AV_COLORS[h % AV_COLORS.length];
 };
-/** ロゴ画像 or 頭文字アバターのアイコン要素を返す。domainOverride指定時は名前マッチをスキップ */
-function iconNode(name, avatarColor, domainOverride) {
+const faviconUrl = d => 'https://www.google.com/s2/favicons?sz=64&domain=' + encodeURIComponent(d);
+/**
+ * アイコン要素を返す。優先順: 同梱ロゴ(logos/) → faviconサービス → 頭文字アバター。
+ * opts={file, domain} で支払方法などの直接指定(未指定なら店舗名からマッチ)
+ */
+function iconNode(name, avatarColor, opts) {
+  const o = opts || {};
   const div = document.createElement('div');
   div.className = 'ic';
-  const d = domainOverride !== undefined ? domainOverride : brandDomain(name || '');
+  const file = o.file !== undefined ? o.file : brandLogoFile(name || '');
+  const domain = o.domain !== undefined ? o.domain : brandDomain(name || '');
   const showInitial = () => {
     div.classList.remove('logo');
     div.textContent = initialOf(name);
     div.style.background = avatarColor || hashColor(name);
   };
-  if (d) {
-    div.classList.add('logo');
-    const img = document.createElement('img');
-    img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
-    img.onerror = showInitial;
-    img.src = 'https://www.google.com/s2/favicons?sz=64&domain=' + encodeURIComponent(d);
-    div.appendChild(img);
-  } else showInitial();
+  if (!file && !domain) { showInitial(); return div; }
+  div.classList.add('logo');
+  const img = document.createElement('img');
+  img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
+  let triedFavicon = !(file && domain); // 同梱→faviconの2段目が残っているか
+  img.onerror = () => {
+    if (!triedFavicon) { triedFavicon = true; img.src = faviconUrl(domain); }
+    else { img.remove(); showInitial(); }
+  };
+  img.src = file ? 'logos/' + file : faviconUrl(domain);
+  div.appendChild(img);
   return div;
 }
 const NA = 'N/A'; // メール由来のプレースホルダ明細(商品名不明)
@@ -358,7 +392,7 @@ function renderHome() {
   d.byPay.forEach(pv => {
     const cardEl = document.createElement('div');
     cardEl.className = 'paycard';
-    cardEl.appendChild(iconNode(pv[0], hashColor(pv[0]), PAY_DOMAINS[pv[0]] || null));
+    cardEl.appendChild(iconNode(pv[0], hashColor(pv[0]), { file: PAY_FILES[pv[0]] || null, domain: PAY_DOMAINS[pv[0]] || null }));
     const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = pv[0];
     const amt = document.createElement('div'); amt.className = 'amt'; amt.textContent = yen(pv[1]);
     cardEl.appendChild(nm); cardEl.appendChild(amt);
